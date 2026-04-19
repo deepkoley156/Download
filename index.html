@@ -7,7 +7,6 @@
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       font-family: Arial, sans-serif;
       background: #f4f7fb;
@@ -15,22 +14,19 @@
       padding: 24px;
       min-height: 100vh;
     }
-
     .wrap {
       max-width: 860px;
       margin: 0 auto;
-      background: #ffffff;
+      background: #fff;
       border-radius: 18px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.08);
       padding: 24px;
     }
-
     h1 {
       text-align: center;
       font-size: 28px;
       margin-bottom: 10px;
     }
-
     .sub {
       text-align: center;
       color: #4b5563;
@@ -38,7 +34,6 @@
       line-height: 1.7;
       margin-bottom: 22px;
     }
-
     .note {
       background: #f8fafc;
       border: 1px solid #e5e7eb;
@@ -49,14 +44,12 @@
       line-height: 1.7;
       margin-bottom: 18px;
     }
-
     .row {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
       margin-bottom: 14px;
     }
-
     input, select {
       flex: 1;
       min-width: 240px;
@@ -66,10 +59,7 @@
       font-size: 15px;
       outline: none;
     }
-
-    input:focus, select:focus {
-      border-color: #4f46e5;
-    }
+    input:focus, select:focus { border-color: #4f46e5; }
 
     button, a.btn {
       border: none;
@@ -83,14 +73,12 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-    }
-
-    button:hover, a.btn:hover {
-      opacity: 0.93;
+      min-height: 48px;
     }
 
     .primary { background: #4f46e5; }
     .muted { background: #374151; }
+    .green { background: #059669; }
 
     .msg {
       display: none;
@@ -100,31 +88,26 @@
       margin-bottom: 14px;
       line-height: 1.6;
     }
-
     .error {
       background: #fef2f2;
       border: 1px solid #fecaca;
       color: #b91c1c;
     }
-
     .success {
       background: #ecfdf5;
       border: 1px solid #a7f3d0;
       color: #047857;
     }
-
     .player-box {
       display: none;
       margin-top: 18px;
     }
-
     video {
       width: 100%;
       background: #000;
       border-radius: 16px;
       max-height: 520px;
     }
-
     .panel {
       margin-top: 16px;
       padding: 16px;
@@ -132,7 +115,6 @@
       border-radius: 14px;
       background: #fafafa;
     }
-
     .panel p {
       font-size: 14px;
       color: #374151;
@@ -140,47 +122,42 @@
       word-break: break-all;
       margin-bottom: 10px;
     }
-
     .actions {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
       margin-top: 10px;
     }
-
     .quality-wrap {
       display: none;
       margin-top: 14px;
     }
-
     .small {
       font-size: 12px;
       color: #6b7280;
       margin-top: 8px;
       line-height: 1.6;
     }
+    .hidden {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Public Video Player</h1>
-    <p class="sub">
-      Paste a public direct video URL like <b>.mp4</b> or <b>.m3u8</b> to play it in-browser.
-    </p>
+    <p class="sub">Paste a public direct video URL like .mp4 or .m3u8</p>
 
     <div class="note">
-      This tool is for media URLs you are allowed to access. It does not bypass site protections, DRM, account restrictions, or private access controls.
+      This tool is only for media URLs you are allowed to access and save.
+      It does not bypass DRM, login walls, or protected/private site restrictions.
     </div>
 
     <div id="errorBox" class="msg error"></div>
     <div id="successBox" class="msg success"></div>
 
     <div class="row">
-      <input
-        type="url"
-        id="videoUrl"
-        placeholder="Paste .mp4 or .m3u8 URL here"
-      />
+      <input type="url" id="videoUrl" placeholder="Paste .mp4 or .m3u8 URL here">
       <button class="primary" id="loadBtn">Load Video</button>
     </div>
 
@@ -202,11 +179,11 @@
       <div class="panel">
         <p id="currentUrlText">URL:</p>
         <div class="actions">
+          <a id="downloadLink" class="btn green hidden" href="#" download>Tap to Download</a>
           <a id="openBtn" class="btn" href="#" target="_blank" rel="noopener noreferrer">Open Link</a>
-          <a id="downloadManifestBtn" class="btn primary" href="#" download>Download Source</a>
         </div>
-        <div class="small">
-          For HLS `.m3u8`, the "Download Source" button downloads the playlist URL response only if the server allows it. It does not merge segments into one MP4.
+        <div class="small" id="downloadHint">
+          Direct file হলে download link দেখাবে।
         </div>
       </div>
     </div>
@@ -221,10 +198,11 @@
     const errorBox = document.getElementById('errorBox');
     const successBox = document.getElementById('successBox');
     const openBtn = document.getElementById('openBtn');
-    const downloadManifestBtn = document.getElementById('downloadManifestBtn');
     const currentUrlText = document.getElementById('currentUrlText');
     const qualityWrap = document.getElementById('qualityWrap');
     const qualitySelect = document.getElementById('qualitySelect');
+    const downloadLink = document.getElementById('downloadLink');
+    const downloadHint = document.getElementById('downloadHint');
 
     let hlsInstance = null;
 
@@ -258,6 +236,9 @@
       qualitySelect.innerHTML = '<option value="-1">Auto quality</option>';
       qualityWrap.style.display = 'none';
       playerBox.style.display = 'none';
+      downloadLink.classList.add('hidden');
+      downloadLink.href = '#';
+      downloadLink.removeAttribute('download');
       hideMessages();
     }
 
@@ -275,18 +256,26 @@
     function fileNameFromUrl(url) {
       try {
         const pathname = new URL(url).pathname;
-        const last = pathname.split('/').pop() || 'video';
-        return last || 'video';
+        const last = pathname.split('/').pop() || 'video.mp4';
+        return last.includes('.') ? last : 'video.mp4';
       } catch {
-        return 'video';
+        return 'video.mp4';
       }
     }
 
-    function setupActions(url) {
+    function setupActions(url, type) {
       currentUrlText.textContent = 'URL: ' + url;
       openBtn.href = url;
-      downloadManifestBtn.href = url;
-      downloadManifestBtn.setAttribute('download', fileNameFromUrl(url));
+
+      if (type === 'm3u8') {
+        downloadLink.classList.add('hidden');
+        downloadHint.textContent = 'এই URL টি HLS playlist (.m3u8)। এটা single video file না, তাই direct download link দেখানো হচ্ছে না।';
+      } else {
+        downloadLink.href = url;
+        downloadLink.setAttribute('download', fileNameFromUrl(url));
+        downloadLink.classList.remove('hidden');
+        downloadHint.textContent = 'Direct file detected. Tap to Download এ tap করো. Long-press সব browser-এ কাজ নাও করতে পারে.';
+      }
     }
 
     function setupHlsQualitySelector(hls) {
@@ -312,14 +301,14 @@
       };
     }
 
-    function loadMp4(url) {
+    function loadDirectFile(url, type) {
+      setupActions(url, type);
       video.src = url;
       video.load();
       playerBox.style.display = 'block';
-      setupActions(url);
 
       video.onloadedmetadata = () => {
-        showSuccess('Video loaded successfully.');
+        showSuccess('Direct video loaded successfully.');
       };
 
       video.onerror = () => {
@@ -328,7 +317,7 @@
     }
 
     function loadM3U8(url) {
-      setupActions(url);
+      setupActions(url, 'm3u8');
       playerBox.style.display = 'block';
 
       if (video.canPlayType('application/vnd.apple.mpegurl')) {
@@ -404,13 +393,14 @@
       if (type === 'm3u8') {
         loadM3U8(url);
       } else if (['mp4', 'webm', 'ogg', 'mov', 'm4v'].includes(type)) {
-        loadMp4(url);
+        loadDirectFile(url, type);
       } else {
         showError('Supported formats: .mp4, .webm, .ogg, .mov, .m4v, .m3u8');
       }
     }
 
     loadBtn.addEventListener('click', loadVideo);
+
     clearBtn.addEventListener('click', () => {
       videoInput.value = '';
       resetPlayer();

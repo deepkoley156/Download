@@ -3,132 +3,129 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Public Video Downloader</title>
+  <title>Public Video Player</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: Arial, sans-serif;
-      background: #f5f7fb;
-      color: #111;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
+      background: #f4f7fb;
+      color: #111827;
       padding: 24px;
+      min-height: 100vh;
     }
 
-    .app {
-      width: 100%;
-      max-width: 720px;
-      background: #fff;
+    .wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      background: #ffffff;
       border-radius: 18px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.08);
       padding: 24px;
     }
 
     h1 {
+      text-align: center;
       font-size: 28px;
       margin-bottom: 10px;
-      text-align: center;
     }
 
     .sub {
       text-align: center;
-      color: #555;
+      color: #4b5563;
       font-size: 14px;
-      margin-bottom: 24px;
-      line-height: 1.6;
+      line-height: 1.7;
+      margin-bottom: 22px;
     }
 
-    .input-group {
+    .note {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      color: #374151;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.7;
+      margin-bottom: 18px;
+    }
+
+    .row {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
-    input {
+    input, select {
       flex: 1;
-      min-width: 220px;
+      min-width: 240px;
       padding: 14px;
-      border: 1px solid #d6dbe6;
+      border: 1px solid #d1d5db;
       border-radius: 12px;
       font-size: 15px;
       outline: none;
     }
 
-    input:focus {
+    input:focus, select:focus {
       border-color: #4f46e5;
     }
 
-    button {
+    button, a.btn {
       border: none;
       background: #111827;
       color: white;
       padding: 14px 18px;
       border-radius: 12px;
       cursor: pointer;
-      font-size: 15px;
-      transition: 0.2s;
+      font-size: 14px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    button:hover {
-      opacity: 0.92;
+    button:hover, a.btn:hover {
+      opacity: 0.93;
     }
 
-    .secondary {
-      background: #4f46e5;
-    }
+    .primary { background: #4f46e5; }
+    .muted { background: #374151; }
 
-    .note {
-      font-size: 13px;
-      color: #666;
-      line-height: 1.7;
-      background: #f8fafc;
-      border: 1px solid #e5e7eb;
-      padding: 14px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-    }
-
-    .error, .success {
+    .msg {
       display: none;
-      margin-bottom: 14px;
       padding: 12px 14px;
       border-radius: 12px;
       font-size: 14px;
+      margin-bottom: 14px;
+      line-height: 1.6;
     }
 
     .error {
       background: #fef2f2;
-      color: #b91c1c;
       border: 1px solid #fecaca;
+      color: #b91c1c;
     }
 
     .success {
       background: #ecfdf5;
-      color: #047857;
       border: 1px solid #a7f3d0;
+      color: #047857;
     }
 
-    .player-wrap {
+    .player-box {
       display: none;
-      margin-top: 20px;
+      margin-top: 18px;
     }
 
     video {
       width: 100%;
-      border-radius: 16px;
       background: #000;
-      max-height: 420px;
+      border-radius: 16px;
+      max-height: 520px;
     }
 
-    .download-box {
-      display: none;
+    .panel {
       margin-top: 16px;
       padding: 16px;
       border: 1px solid #e5e7eb;
@@ -136,185 +133,287 @@
       background: #fafafa;
     }
 
-    .download-box p {
+    .panel p {
       font-size: 14px;
-      color: #444;
-      margin-bottom: 12px;
+      color: #374151;
+      line-height: 1.7;
       word-break: break-all;
+      margin-bottom: 10px;
     }
 
-    .download-actions {
+    .actions {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
+      margin-top: 10px;
     }
 
-    a.download-btn {
-      display: inline-block;
-      text-decoration: none;
-      background: #4f46e5;
-      color: white;
-      padding: 12px 16px;
-      border-radius: 12px;
-      font-size: 14px;
+    .quality-wrap {
+      display: none;
+      margin-top: 14px;
     }
 
-    a.open-btn {
-      display: inline-block;
-      text-decoration: none;
-      background: #111827;
-      color: white;
-      padding: 12px 16px;
-      border-radius: 12px;
-      font-size: 14px;
-    }
-
-    .footer {
-      margin-top: 22px;
+    .small {
       font-size: 12px;
-      color: #777;
-      text-align: center;
+      color: #6b7280;
+      margin-top: 8px;
       line-height: 1.6;
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <h1>Public Video Downloader</h1>
+  <div class="wrap">
+    <h1>Public Video Player</h1>
     <p class="sub">
-      Paste a direct public video file URL like MP4 / WebM and preview or download it.
+      Paste a public direct video URL like <b>.mp4</b> or <b>.m3u8</b> to play it in-browser.
     </p>
 
     <div class="note">
-      This page is for downloading videos you are allowed to access and save.
-      It does not bypass DRM, login protection, private content, or site restrictions.
+      This tool is for media URLs you are allowed to access. It does not bypass site protections, DRM, account restrictions, or private access controls.
     </div>
 
-    <div id="errorBox" class="error"></div>
-    <div id="successBox" class="success"></div>
+    <div id="errorBox" class="msg error"></div>
+    <div id="successBox" class="msg success"></div>
 
-    <div class="input-group">
+    <div class="row">
       <input
         type="url"
         id="videoUrl"
-        placeholder="Paste direct video URL here (example: https://example.com/video.mp4)"
+        placeholder="Paste .mp4 or .m3u8 URL here"
       />
-      <button onclick="loadVideo()">Load Video</button>
+      <button class="primary" id="loadBtn">Load Video</button>
     </div>
 
-    <div class="input-group">
-      <button class="secondary" onclick="clearAll()">Clear</button>
+    <div class="row">
+      <button class="muted" id="clearBtn">Clear</button>
     </div>
 
-    <div class="player-wrap" id="playerWrap">
-      <video id="videoPlayer" controls playsinline></video>
-    </div>
+    <div class="player-box" id="playerBox">
+      <video id="video" controls playsinline></video>
 
-    <div class="download-box" id="downloadBox">
-      <p id="videoLinkText"></p>
-      <div class="download-actions">
-        <a id="downloadBtn" class="download-btn" href="#" download>Download Video</a>
-        <a id="openBtn" class="open-btn" href="#" target="_blank" rel="noopener noreferrer">Open in New Tab</a>
+      <div class="quality-wrap" id="qualityWrap">
+        <div class="row" style="margin-top:14px;">
+          <select id="qualitySelect">
+            <option value="-1">Auto quality</option>
+          </select>
+        </div>
       </div>
-    </div>
 
-    <div class="footer">
-      Best for direct public video file links. Some servers may block preview or download due to CORS, hotlink protection, or response headers.
+      <div class="panel">
+        <p id="currentUrlText">URL:</p>
+        <div class="actions">
+          <a id="openBtn" class="btn" href="#" target="_blank" rel="noopener noreferrer">Open Link</a>
+          <a id="downloadManifestBtn" class="btn primary" href="#" download>Download Source</a>
+        </div>
+        <div class="small">
+          For HLS `.m3u8`, the "Download Source" button downloads the playlist URL response only if the server allows it. It does not merge segments into one MP4.
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    const urlInput = document.getElementById("videoUrl");
-    const videoPlayer = document.getElementById("videoPlayer");
-    const playerWrap = document.getElementById("playerWrap");
-    const downloadBox = document.getElementById("downloadBox");
-    const downloadBtn = document.getElementById("downloadBtn");
-    const openBtn = document.getElementById("openBtn");
-    const videoLinkText = document.getElementById("videoLinkText");
-    const errorBox = document.getElementById("errorBox");
-    const successBox = document.getElementById("successBox");
+    const videoInput = document.getElementById('videoUrl');
+    const loadBtn = document.getElementById('loadBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const video = document.getElementById('video');
+    const playerBox = document.getElementById('playerBox');
+    const errorBox = document.getElementById('errorBox');
+    const successBox = document.getElementById('successBox');
+    const openBtn = document.getElementById('openBtn');
+    const downloadManifestBtn = document.getElementById('downloadManifestBtn');
+    const currentUrlText = document.getElementById('currentUrlText');
+    const qualityWrap = document.getElementById('qualityWrap');
+    const qualitySelect = document.getElementById('qualitySelect');
+
+    let hlsInstance = null;
 
     function showError(msg) {
-      errorBox.style.display = "block";
-      successBox.style.display = "none";
+      errorBox.style.display = 'block';
+      successBox.style.display = 'none';
       errorBox.textContent = msg;
     }
 
     function showSuccess(msg) {
-      successBox.style.display = "block";
-      errorBox.style.display = "none";
+      successBox.style.display = 'block';
+      errorBox.style.display = 'none';
       successBox.textContent = msg;
     }
 
     function hideMessages() {
-      errorBox.style.display = "none";
-      successBox.style.display = "none";
+      errorBox.style.display = 'none';
+      successBox.style.display = 'none';
     }
 
-    function guessFilenameFromUrl(url) {
+    function resetPlayer() {
+      if (hlsInstance) {
+        hlsInstance.destroy();
+        hlsInstance = null;
+      }
+
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+
+      qualitySelect.innerHTML = '<option value="-1">Auto quality</option>';
+      qualityWrap.style.display = 'none';
+      playerBox.style.display = 'none';
+      hideMessages();
+    }
+
+    function getExtensionType(url) {
+      const cleanUrl = url.split('?')[0].toLowerCase();
+      if (cleanUrl.endsWith('.m3u8')) return 'm3u8';
+      if (cleanUrl.endsWith('.mp4')) return 'mp4';
+      if (cleanUrl.endsWith('.webm')) return 'webm';
+      if (cleanUrl.endsWith('.ogg')) return 'ogg';
+      if (cleanUrl.endsWith('.mov')) return 'mov';
+      if (cleanUrl.endsWith('.m4v')) return 'm4v';
+      return 'unknown';
+    }
+
+    function fileNameFromUrl(url) {
       try {
-        const u = new URL(url);
-        const lastPart = u.pathname.split("/").pop() || "video.mp4";
-        return lastPart.includes(".") ? lastPart : "video.mp4";
+        const pathname = new URL(url).pathname;
+        const last = pathname.split('/').pop() || 'video';
+        return last || 'video';
       } catch {
-        return "video.mp4";
+        return 'video';
       }
     }
 
-    function isLikelyDirectVideo(url) {
-      return /\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(url);
+    function setupActions(url) {
+      currentUrlText.textContent = 'URL: ' + url;
+      openBtn.href = url;
+      downloadManifestBtn.href = url;
+      downloadManifestBtn.setAttribute('download', fileNameFromUrl(url));
+    }
+
+    function setupHlsQualitySelector(hls) {
+      const levels = hls.levels || [];
+      if (!levels.length) return;
+
+      qualitySelect.innerHTML = '<option value="-1">Auto quality</option>';
+
+      levels.forEach((level, index) => {
+        const option = document.createElement('option');
+        const height = level.height ? `${level.height}p` : `Level ${index + 1}`;
+        const bitrate = level.bitrate ? ` (${Math.round(level.bitrate / 1000)} kbps)` : '';
+        option.value = index;
+        option.textContent = height + bitrate;
+        qualitySelect.appendChild(option);
+      });
+
+      qualityWrap.style.display = 'block';
+
+      qualitySelect.onchange = () => {
+        const selected = parseInt(qualitySelect.value, 10);
+        hls.currentLevel = selected;
+      };
+    }
+
+    function loadMp4(url) {
+      video.src = url;
+      video.load();
+      playerBox.style.display = 'block';
+      setupActions(url);
+
+      video.onloadedmetadata = () => {
+        showSuccess('Video loaded successfully.');
+      };
+
+      video.onerror = () => {
+        showError('Video could not be played. The server may be blocking playback or the URL may be invalid.');
+      };
+    }
+
+    function loadM3U8(url) {
+      setupActions(url);
+      playerBox.style.display = 'block';
+
+      if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = url;
+        video.addEventListener('loadedmetadata', () => {
+          showSuccess('HLS video loaded successfully.');
+        }, { once: true });
+
+        video.addEventListener('error', () => {
+          showError('HLS playback failed. The source may be blocked or unavailable.');
+        }, { once: true });
+
+        return;
+      }
+
+      if (window.Hls && Hls.isSupported()) {
+        hlsInstance = new Hls({
+          enableWorker: true,
+          lowLatencyMode: true
+        });
+
+        hlsInstance.loadSource(url);
+        hlsInstance.attachMedia(video);
+
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, function () {
+          setupHlsQualitySelector(hlsInstance);
+          showSuccess('HLS playlist loaded successfully.');
+        });
+
+        hlsInstance.on(Hls.Events.ERROR, function (event, data) {
+          if (data && data.fatal) {
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                showError('Network error while loading HLS stream. The server may be blocking requests.');
+                hlsInstance.destroy();
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                showError('Media error while playing stream.');
+                hlsInstance.recoverMediaError();
+                break;
+              default:
+                showError('Could not load this HLS stream.');
+                hlsInstance.destroy();
+                break;
+            }
+          }
+        });
+      } else {
+        showError('Your browser does not support HLS playback here.');
+      }
     }
 
     function loadVideo() {
       hideMessages();
 
-      const url = urlInput.value.trim();
-
+      const url = videoInput.value.trim();
       if (!url) {
-        showError("Please paste a video URL first.");
+        showError('Please paste a URL first.');
         return;
       }
 
       try {
         new URL(url);
       } catch {
-        showError("Please enter a valid URL.");
+        showError('Please enter a valid URL.');
         return;
       }
 
-      if (!isLikelyDirectVideo(url)) {
-        showError("This does not look like a direct video file URL. Use a direct .mp4 / .webm / .ogg style link.");
-        return;
+      resetPlayer();
+
+      const type = getExtensionType(url);
+
+      if (type === 'm3u8') {
+        loadM3U8(url);
+      } else if (['mp4', 'webm', 'ogg', 'mov', 'm4v'].includes(type)) {
+        loadMp4(url);
+      } else {
+        showError('Supported formats: .mp4, .webm, .ogg, .mov, .m4v, .m3u8');
       }
-
-      videoPlayer.src = url;
-      videoPlayer.load();
-
-      playerWrap.style.display = "block";
-      downloadBox.style.display = "block";
-
-      const fileName = guessFilenameFromUrl(url);
-      downloadBtn.href = url;
-      downloadBtn.setAttribute("download", fileName);
-
-      openBtn.href = url;
-      videoLinkText.textContent = "Video URL: " + url;
-
-      showSuccess("Video loaded. You can now preview or download it if the source server allows it.");
     }
 
-    function clearAll() {
-      urlInput.value = "";
-      videoPlayer.pause();
-      videoPlayer.removeAttribute("src");
-      videoPlayer.load();
-      playerWrap.style.display = "none";
-      downloadBox.style.display = "none";
-      hideMessages();
-    }
-
-    videoPlayer.addEventListener("error", () => {
-      showError("Video preview failed. The server may be blocking playback or the URL may not be a valid public direct video file.");
+    loadBtn.addEventListener('click', loadVideo);
+    clearBtn.addEventListener('click', () => {
+      videoInput.value = '';
+      resetPlayer();
     });
   </script>
 </body>
